@@ -1,0 +1,59 @@
+diff --git a/src/convert.cpp b/src/convert.cpp
+index 7fb0825..8095244 100644
+--- a/src/convert.cpp
++++ b/src/convert.cpp
+@@ -590,7 +590,7 @@ bool convert_with_components(const char* model_path,
+     bool loaded_any = false;
+ 
+     if (!init_convert_path(model_loader, model_path, "", loaded_any) ||
+-        !init_convert_path(model_loader, clip_l_path, "text_encoders.clip_l.transformer.", loaded_any) ||
++        !init_convert_path(model_loader, clip_l_path, "clip_l.", loaded_any) ||
+         !init_convert_path(model_loader, clip_g_path, "text_encoders.clip_g.transformer.", loaded_any) ||
+         !init_convert_path(model_loader, t5xxl_path, "text_encoders.t5xxl.transformer.", loaded_any) ||
+         !init_convert_path(model_loader, diffusion_model_path, "model.diffusion_model.", loaded_any) ||
+diff --git a/src/model_loader.cpp b/src/model_loader.cpp
+index f14044d..20024b1 100644
+--- a/src/model_loader.cpp
++++ b/src/model_loader.cpp
+@@ -578,6 +578,7 @@ SDVersion ModelLoader::get_sd_version() const {
+             has_img_emb = true;
+         }
+         if (tensor_storage.name.find("model.diffusion_model.input_blocks.") != std::string::npos ||
++            tensor_storage.name.find("model.diffusion_model.down_blocks.") != std::string::npos ||
+             tensor_storage.name.find("unet.down_blocks.") != std::string::npos) {
+             is_unet = true;
+             if (has_multiple_encoders) {
+@@ -596,6 +597,7 @@ SDVersion ModelLoader::get_sd_version() const {
+             return VERSION_SVD;
+         }
+         if (tensor_storage.name.find("model.diffusion_model.middle_block.1.") != std::string::npos ||
++            tensor_storage.name.find("model.diffusion_model.mid_block.resnets.1.") != std::string::npos ||
+             tensor_storage.name.find("unet.mid_block.resnets.1.") != std::string::npos) {
+             has_middle_block_1 = true;
+         }
+@@ -604,6 +606,7 @@ SDVersion ModelLoader::get_sd_version() const {
+             has_output_block_311 = true;
+         }
+         if (tensor_storage.name.find("model.diffusion_model.output_blocks.7.1") != std::string::npos ||
++            tensor_storage.name.find("model.diffusion_model.up_blocks.2.attentions.1") != std::string::npos ||
+             tensor_storage.name.find("unet.up_blocks.2.attentions.1") != std::string::npos) {
+             has_output_block_71 = true;
+             if (tensor_storage.name.find("model.diffusion_model.output_blocks.7.1.transformer_blocks.0.attn1.to_k.weight") != std::string::npos) {
+@@ -614,6 +617,7 @@ SDVersion ModelLoader::get_sd_version() const {
+         if (tensor_storage.name == "cond_stage_model.transformer.text_model.embeddings.token_embedding.weight" ||
+             tensor_storage.name == "cond_stage_model.model.token_embedding.weight" ||
+             tensor_storage.name == "text_model.embeddings.token_embedding.weight" ||
++            tensor_storage.name == "clip_l.text_model.embeddings.token_embedding.weight" ||
+             tensor_storage.name == "te.text_model.embeddings.token_embedding.weight" ||
+             tensor_storage.name == "conditioner.embedders.0.model.token_embedding.weight" ||
+             tensor_storage.name == "conditioner.embedders.0.transformer.text_model.embeddings.token_embedding.weight") {
+@@ -622,7 +626,8 @@ SDVersion ModelLoader::get_sd_version() const {
+         }
+         if (tensor_storage.name == "model.diffusion_model.input_blocks.0.0.weight" ||
+             tensor_storage.name == "model.diffusion_model.img_in.weight" ||
+-            tensor_storage.name == "unet.conv_in.weight") {
++            tensor_storage.name == "unet.conv_in.weight" ||
++            tensor_storage.name == "model.diffusion_model.conv_in.weight") {
+             input_block_weight = tensor_storage;
+         }
+         if (tensor_storage.name == "model.diffusion_model.txt_in.weight" || tensor_storage.name == "model.diffusion_model.context_embedder.weight") {

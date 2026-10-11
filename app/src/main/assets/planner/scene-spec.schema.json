@@ -1,0 +1,39 @@
+{
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "prompt": {"type": "string", "maxLength": 800},
+    "negative_prompt": {"type": "string", "maxLength": 240},
+    "style": {"type": "string", "maxLength": 120},
+    "camera": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "shot": {"type": "string", "maxLength": 40},
+        "angle": {"type": "string", "maxLength": 40}
+      },
+      "required": ["shot", "angle"]
+    },
+    "lighting": {"type": "string", "maxLength": 120},
+    "subjects": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 6,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "name": {"type": "string", "maxLength": 80},
+          "appearance": {"type": "string", "maxLength": 180},
+          "action": {"type": "string", "maxLength": 120},
+          "x": {"type": "number", "minimum": 0, "maximum": 1},
+          "y": {"type": "number", "minimum": 0, "maximum": 1},
+          "width": {"type": "number", "exclusiveMinimum": 0, "maximum": 1},
+          "height": {"type": "number", "exclusiveMinimum": 0, "maximum": 1}
+        },
+        "required": ["name", "appearance", "action", "x", "y", "width", "height"]
+      }
+    }
+  },
+  "required": ["prompt", "negative_prompt", "style", "camera", "lighting", "subjects"]
+}

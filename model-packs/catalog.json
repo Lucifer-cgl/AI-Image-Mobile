@@ -1,0 +1,96 @@
+{
+  "schema_version": 1,
+  "catalog_version": "0.1.0-dev",
+  "packages": [
+    {
+      "id": "prompt-planner-zh",
+      "name": "中文画面规划器",
+      "role": "planner",
+      "required": true,
+      "state": "candidate",
+      "candidate": "Qwen 1.5B-class Instruct GGUF Q4",
+      "runtime": "llama.cpp CPU/ARM NEON",
+      "license": "Apache-2.0",
+      "upstream": "https://huggingface.co/Qwen/Qwen2.5-1.5B-Instruct-GGUF",
+      "files": [
+        {
+          "name": "qwen2.5-1.5b-instruct-q4_k_m.gguf",
+          "sha256": "6a1a2eb6d15622bf3c96857206351ba97e1af16c30d7a74ee38970e434e9407e",
+          "bytes": 1117320736,
+          "sources": [
+            {"region": "国内镜像一", "url": "https://ghfast.top/https://github.com/Lucifer-cgl/AI-Image-Mobile/releases/download/v0.1.0-alpha/qwen2.5-1.5b-instruct-q4_k_m.gguf"},
+            {"region": "国内镜像二", "url": "https://gh-proxy.com/https://github.com/Lucifer-cgl/AI-Image-Mobile/releases/download/v0.1.0-alpha/qwen2.5-1.5b-instruct-q4_k_m.gguf"},
+            {"region": "GitHub官方", "url": "https://github.com/Lucifer-cgl/AI-Image-Mobile/releases/download/v0.1.0-alpha/qwen2.5-1.5b-instruct-q4_k_m.gguf"}
+          ]
+        }
+      ]
+    },
+    {
+      "id": "image-lcm",
+      "name": "LCM少步生图模型",
+      "role": "image",
+      "required": true,
+      "state": "candidate",
+      "candidate": "LCM DreamShaper V7 quantized",
+      "runtime": "stable-diffusion.cpp Vulkan or MNN OpenCL",
+      "license": "MIT",
+      "upstream": "https://huggingface.co/SimianLuo/LCM_Dreamshaper_v7",
+      "source_artifact": {
+        "name": "LCM_Dreamshaper_v7_4k.safetensors",
+        "sha256": "84feab3a32f1d36108b762b25dad483ca9e37f719b23e0cfd0fdc4ad3fd5409b",
+        "bytes": 3438495296
+      },
+      "files": [
+        {
+          "name": "lcm-dreamshaper-v7-mobile-final-q4_0.gguf",
+          "sha256": "7c8b006d8662426ca9296164257038a753c020b61042a680403abd0697fe56bb",
+          "bytes": 2717120288,
+          "parts": [
+            {
+              "name": "lcm-dreamshaper-v7-mobile-final-q4_0.gguf.part-001",
+              "sha256": "63207fd40eb8f5e2d3f045d2b8faa7b6ae563da2e70109a3575f995f61dff13b",
+              "bytes": 1400000000,
+              "sources": [
+                {"region": "国内镜像一", "url": "https://ghfast.top/https://github.com/Lucifer-cgl/AI-Image-Mobile/releases/download/v0.1.0-alpha/lcm-dreamshaper-v7-mobile-final-q4_0.gguf.part-001"},
+                {"region": "国内镜像二", "url": "https://gh-proxy.com/https://github.com/Lucifer-cgl/AI-Image-Mobile/releases/download/v0.1.0-alpha/lcm-dreamshaper-v7-mobile-final-q4_0.gguf.part-001"},
+                {"region": "GitHub官方", "url": "https://github.com/Lucifer-cgl/AI-Image-Mobile/releases/download/v0.1.0-alpha/lcm-dreamshaper-v7-mobile-final-q4_0.gguf.part-001"}
+              ]
+            },
+            {
+              "name": "lcm-dreamshaper-v7-mobile-final-q4_0.gguf.part-002",
+              "sha256": "a24fcbe8cc384547912616c02a21fe18eefc22f89af3ae6c7ad362f389c79443",
+              "bytes": 1317120288,
+              "sources": [
+                {"region": "国内镜像一", "url": "https://ghfast.top/https://github.com/Lucifer-cgl/AI-Image-Mobile/releases/download/v0.1.0-alpha/lcm-dreamshaper-v7-mobile-final-q4_0.gguf.part-002"},
+                {"region": "国内镜像二", "url": "https://gh-proxy.com/https://github.com/Lucifer-cgl/AI-Image-Mobile/releases/download/v0.1.0-alpha/lcm-dreamshaper-v7-mobile-final-q4_0.gguf.part-002"},
+                {"region": "GitHub官方", "url": "https://github.com/Lucifer-cgl/AI-Image-Mobile/releases/download/v0.1.0-alpha/lcm-dreamshaper-v7-mobile-final-q4_0.gguf.part-002"}
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "taesd-sd15",
+      "name": "TAESD快速解码器",
+      "role": "decoder",
+      "required": true,
+      "state": "source-locked",
+      "upstream": "https://github.com/madebyollin/taesd",
+      "license": "MIT",
+      "files": [
+        {
+          "name": "taesd.safetensors",
+          "sha256": "db169d69145ec4ff064e49d99c95fa05d3eb04ee453de35824a6d0f325513549",
+          "bytes": 9793292,
+          "sources": [
+            {"region": "国内镜像一", "url": "https://ghfast.top/https://github.com/Lucifer-cgl/AI-Image-Mobile/releases/download/v0.1.0-alpha/taesd.safetensors"},
+            {"region": "国内镜像二", "url": "https://gh-proxy.com/https://github.com/Lucifer-cgl/AI-Image-Mobile/releases/download/v0.1.0-alpha/taesd.safetensors"},
+            {"region": "GitHub官方", "url": "https://github.com/Lucifer-cgl/AI-Image-Mobile/releases/download/v0.1.0-alpha/taesd.safetensors"}
+          ]
+        }
+      ]
+    }
+  ]
+}
+

@@ -1,0 +1,117 @@
+diff --git a/src/ggml-vulkan/CMakeLists.txt b/src/ggml-vulkan/CMakeLists.txt
+index d7dec92a..b0e9893a 100644
+--- a/src/ggml-vulkan/CMakeLists.txt
++++ b/src/ggml-vulkan/CMakeLists.txt
+@@ -77,23 +77,28 @@ if (Vulkan_FOUND)
+     set(VULKAN_SHADER_GEN_CMAKE_ARGS "")
+ 
+     # Test all shader extensions
+-    test_shader_extension_support(
+-        "GL_KHR_cooperative_matrix"
+-        "${CMAKE_CURRENT_SOURCE_DIR}/vulkan-shaders/feature-tests/coopmat.comp"
+-        "GGML_VULKAN_COOPMAT_GLSLC_SUPPORT"
+-    )
++    # Android NDK glslc can misreport cooperative-matrix support while cross
++    # compiling, then fail on the generated variants. Mobile Mali/Adreno devices
++    # use the portable Vulkan kernels instead.
++    if (NOT ANDROID)
++        test_shader_extension_support(
++            "GL_KHR_cooperative_matrix"
++            "${CMAKE_CURRENT_SOURCE_DIR}/vulkan-shaders/feature-tests/coopmat.comp"
++            "GGML_VULKAN_COOPMAT_GLSLC_SUPPORT"
++        )
+ 
+-    test_shader_extension_support(
+-        "GL_NV_cooperative_matrix2"
+-        "${CMAKE_CURRENT_SOURCE_DIR}/vulkan-shaders/feature-tests/coopmat2.comp"
+-        "GGML_VULKAN_COOPMAT2_GLSLC_SUPPORT"
+-    )
++        test_shader_extension_support(
++            "GL_NV_cooperative_matrix2"
++            "${CMAKE_CURRENT_SOURCE_DIR}/vulkan-shaders/feature-tests/coopmat2.comp"
++            "GGML_VULKAN_COOPMAT2_GLSLC_SUPPORT"
++        )
+ 
+-    test_shader_extension_support(
+-        "GL_NV_cooperative_matrix_decode_vector"
+-        "${CMAKE_CURRENT_SOURCE_DIR}/vulkan-shaders/feature-tests/coopmat2_decode_vector.comp"
+-        "GGML_VULKAN_COOPMAT2_DECODE_VECTOR_GLSLC_SUPPORT"
+-    )
++        test_shader_extension_support(
++            "GL_NV_cooperative_matrix_decode_vector"
++            "${CMAKE_CURRENT_SOURCE_DIR}/vulkan-shaders/feature-tests/coopmat2_decode_vector.comp"
++            "GGML_VULKAN_COOPMAT2_DECODE_VECTOR_GLSLC_SUPPORT"
++        )
++    endif()
+ 
+     test_shader_extension_support(
+         "GL_EXT_integer_dot_product"
+diff --git a/src/ggml-vulkan/ggml-vulkan.cpp b/src/ggml-vulkan/ggml-vulkan.cpp
+index a6f90364..30c1df97 100644
+--- a/src/ggml-vulkan/ggml-vulkan.cpp
++++ b/src/ggml-vulkan/ggml-vulkan.cpp
+@@ -1031,7 +1031,14 @@ std::unique_ptr<vk_queue> ggml_vk_create_queue(vk_device& device, uint32_t queue
+         h = std::make_shared<vk_queue_handle_synchronized>();
+     }
+ 
+-    h->queue = device->device.getQueue2(queue_info2);
++    if (device->has_internally_synchronized_queues) {
++        h->queue = device->device.getQueue2(queue_info2);
++    } else {
++        // Some Android Mali Vulkan 1.1 loaders return a null handle from
++        // vkGetDeviceQueue2 for an ordinary unflagged queue. The Vulkan 1.0
++        // entry point is equivalent in this case and is broadly reliable.
++        h->queue = device->device.getQueue(queue_family_index, queue_index);
++    }
+     h->device = device;
+     // Avoid concurrent submissions on NVIDIA due to driver bug.
+     if (device->vendor_id == VK_VENDOR_ID_NVIDIA) {
+@@ -3000,6 +3007,7 @@ void ggml_vk_load_shaders(vk_device& device, vk_pipeline requested) {
+     ggml_vk_create_pipeline(device, device->pipeline_matmul_split_k_reduce, "split_k_reduce", split_k_reduce_len, split_k_reduce_data, "main", 2, 2 * sizeof(uint32_t), {256 * 4, 1, 1}, {}, 1);
+     ggml_vk_create_pipeline(device, device->pipeline_flash_attn_split_k_reduce, "fa_split_k_reduce", fa_split_k_reduce_len, fa_split_k_reduce_data, "main", 3, sizeof(vk_op_flash_attn_split_k_reduce_push_constants), {1, device->subgroup_size, 1}, {device->subgroup_size}, 1, true);
+ 
++#if defined(GGML_VULKAN_COOPMAT_GLSLC_SUPPORT)
+     if (device->vendor_id == VK_VENDOR_ID_INTEL && (device->architecture == INTEL_XE2 || (device->architecture == INTEL_XE1 && device->coopmat_support && device->uma))) {
+         auto upper_power_of_2 = [&](uint32_t in) {
+             GGML_ASSERT(in != 0);
+@@ -3039,6 +3047,7 @@ void ggml_vk_load_shaders(vk_device& device, vk_pipeline requested) {
+             ggml_vk_create_pipeline(device, pipelines.second, "xe_fa_decode_ph2", fa_decode_ph2_cm1_len, fa_decode_ph2_cm1_data, "main", 5, sizeof(vk_fa_xe_opt_push_constants), { 1, 1, 1 }, { group_sz_ph2, gqa_ratio, head_dim_pv, out_per_wg_ph2, xe_native_sub_group_size, split_p_per_iter_ph2, split_p_chunk, out_dim_per_wg }, 1, false, true, xe_native_sub_group_size);
+         }
+     }
++#endif
+ 
+     for (auto &it : device->pipeline_fa_mask_opt) {
+         auto BrBc = it.first;
+@@ -4352,6 +4361,17 @@ vk_device ggml_vk_get_device(size_t idx) {
+ 
+         device->shader_int64 = device_features2.features.shaderInt64;
+         device->buffer_device_address = vk12_features.bufferDeviceAddress;
++#if defined(__ANDROID__)
++        // A number of Android 1.1 Mali drivers advertise the KHR buffer-device-
++        // address feature but expose only vkGetBufferDeviceAddressKHR. Vulkan-Hpp
++        // resolves the 1.2 core entry point here, leaving a null dispatcher and
++        // crashing during the first parameter-buffer allocation. The BDA path is
++        // only used together with shaderInt64 below; these mobile GPUs do not
++        // expose shaderInt64, so disabling it is both safe and more compatible.
++        if (!device->shader_int64) {
++            device->buffer_device_address = false;
++        }
++#endif
+         device->vulkan_memory_model = vk12_features.vulkanMemoryModel;
+ 
+         if (device->subgroup_size_control) {
+diff --git a/src/ggml-vulkan/vulkan-shaders/vulkan-shaders-gen.cpp b/src/ggml-vulkan/vulkan-shaders/vulkan-shaders-gen.cpp
+index 6920d7d7..6885ea06 100644
+--- a/src/ggml-vulkan/vulkan-shaders/vulkan-shaders-gen.cpp
++++ b/src/ggml-vulkan/vulkan-shaders/vulkan-shaders-gen.cpp
+@@ -931,8 +931,10 @@ void process_shaders() {
+ 
+     string_to_spv("fa_mask_opt", "flash_attn_mask_opt.comp", {});
+ 
++#if defined(GGML_VULKAN_COOPMAT_GLSLC_SUPPORT)
+     string_to_spv("fa_decode_ph1", "flash_attn_decode_phase_1.comp", {}, true, true, false, false);
+     string_to_spv("fa_decode_ph2", "flash_attn_decode_phase_2.comp", {}, true, true, false, false);
++#endif
+ 
+     string_to_spv("fa_sparse_compact", "flash_attn_sparse_compact.comp", {});
+     string_to_spv("fa_sparse_compact_subgroup", "flash_attn_sparse_compact.comp", {{"USE_SUBGROUPS", "1"}});
