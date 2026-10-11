@@ -10,7 +10,7 @@
 
 ## 下载
 
-- [安卓安装包 v0.1.0-alpha](https://github.com/Lucifer-cgl/AI-Image-Mobile/releases/download/v0.1.0-alpha/AI-Image-Mobile-v0.1.0-alpha.apk)
+- [安卓安装包 v0.1.1-alpha](https://github.com/Lucifer-cgl/AI-Image-Mobile/releases/download/v0.1.1-alpha/AI-Image-Mobile-v0.1.1-alpha.apk)
 - [v0.1.0-alpha 发布页与模型附件](https://github.com/Lucifer-cgl/AI-Image-Mobile/releases/tag/v0.1.0-alpha)
 
 安装 APK 后进入“模型管理”，依次安装三个必需模型包。无需手工拼接分片，也无需把模型放进 APK。
